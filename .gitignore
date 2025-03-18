@@ -1,0 +1,94 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.pnpm-debug.log
+.npm
+.yarn
+
+# Environment variables - critical addition
+.env
+.env.*
+*.env
+!.env.example
+
+# Build output
+/dist
+/build
+/out
+/.next
+/.nuxt
+/.output
+/public/build
+
+# Coverage directory
+/coverage
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Debug
+.debug/
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Serverless directories
+.serverless/
+
+# Netlify
+.netlify/
+
+# Vercel
+.vercel/
+
+# Database files
+*.sqlite
+*.db
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+
+# Caches
+.cache/
+*.cache
+
+# Tests
+/coverage
+.nyc_output
+
+# Docker
+.dockerignore

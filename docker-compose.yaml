@@ -1,0 +1,57 @@
+services:
+  client:
+    build: ./client
+    ports:
+      - "3000:3000"
+    networks:
+      - auth-system
+    restart: unless-stopped
+    depends_on:
+      - server
+
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    networks:
+      - auth-system
+    env_file:
+      - ./server/.env
+    depends_on:
+      - db
+
+  db:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - /home/matrix/Desktop/DockerVolumes/mongodb:/data/db
+    networks:
+      - auth-system
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 30s
+      retries: 5
+      start_period: 40s
+
+  mongo-express:
+    image: mongo-express:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=db
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=false
+      - ME_CONFIG_MONGODB_AUTH_DATABASE=mern-auth
+    networks:
+      - auth-system
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  auth-system:
+    driver: bridge
