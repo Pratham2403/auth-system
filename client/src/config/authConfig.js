@@ -34,11 +34,11 @@ export const authConfig = {
   
   // Default storage type for tokens
   // Options: 'cookie', 'local', 'session'
-  defaultStorage: 'cookie',
+  defaultStorage: 'local',
   
   // API endpoints
   api: {
-    baseUrl: 'http://localhost:5000/api',
+    baseUrl: 'http://localhost:5002/api',
     auth: {
       register: '/auth/register',
       login: '/auth/login',
