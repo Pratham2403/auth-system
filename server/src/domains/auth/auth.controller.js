@@ -1,7 +1,6 @@
 import User from "../../models/User.js";
 import passport from "passport";
 
-
 // Helper function to generate token and handle response
 const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
   // Create token
@@ -77,7 +76,7 @@ export const login = (req, res, next) => {
       if (err) {
         return next(err);
       }
-
+      
       if (!user) {
         return res.status(401).json({
           success: false,
@@ -90,5 +89,35 @@ export const login = (req, res, next) => {
     })(req, res, next);
   } catch (error) {
     next(error);
+  }
+};
+
+export const logout = (req, res) => {
+  try {
+    // Check if using cookie storage
+    if (req.cookies.token) {
+      // Clear the cookie by setting expiration in the past
+      res.cookie('token', 'none', {
+        expires: new Date(Date.now() - 10 * 1000), // 10 seconds ago
+        httpOnly: true
+      });
+    }
+
+    // Update last login time
+    User.findByIdAndUpdate(
+      req.user.id, 
+      { lastLogin: Date.now() },
+      { new: false }
+    ).catch(err => console.log('Error updating last login time:', err));
+
+    return res.status(200).json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Error logging out'
+    });
   }
 };
