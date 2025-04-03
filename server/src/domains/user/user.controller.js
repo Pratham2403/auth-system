@@ -97,9 +97,10 @@ export const getUserById = async (req, res) => {
         ];
       }
     }
-
+    
     // Find all users matching the search criteria
     const users = await User.find(searchCriteria);
+    
 
     if (!users.length) {
       return res.status(404).json({
