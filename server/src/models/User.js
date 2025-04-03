@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { UserType } from "../../../../shared/types/user.type.js";
+import { UserType, DegreeType } from "../../../../shared/types/user.type.js";
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -50,7 +50,7 @@ const UserSchema = new mongoose.Schema({
     admissionNumber: String,
     degree: {
       type: String,
-      enum: ["B.Tech", "M.Tech", "PhD", "Other"],
+      enum: Object.values(DegreeType),
     },
   },
   alumniDetails: {
@@ -70,10 +70,15 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
   },
-  // Profile and authentication related
   profilePicture: {
-    type: String,
-    default: "",
+    url: {
+      type: String,
+      default: "",
+    },
+    publicId: {
+      type: String,
+      default: "",
+    },
   },
   provider: {
     type: String,
@@ -102,13 +107,13 @@ UserSchema.pre("save", async function (next) {
   // Update the timestamp
   this.updatedAt = Date.now();
 
-  // Only hash the password if it's modified (or new)
-  if (!this.isModified("password")) {
+  // Only hash the password if it's modified (or new) and defined
+  if (!this.isModified("password") || !this.password) {
     return next();
   }
 
   // Skip password hashing if using OAuth
-  if (this.provider !== "local" && !this.password) {
+  if (this.provider !== "local") {
     return next();
   }
 

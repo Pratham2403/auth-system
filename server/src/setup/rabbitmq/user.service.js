@@ -3,6 +3,7 @@ import config from "../../../../../shared/rabbitmq/user.configuration.js";
 import User from "../../models/User.js";
 import { UserType } from "../../../../../shared/types/user.type.js";
 import { createUser } from "../../domains/user/user.controller.js";
+import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
 
 class UserRegistrationConsumer {
   constructor() {
@@ -27,7 +28,7 @@ class UserRegistrationConsumer {
       async (content, message) => {
         // Extract routing key from message metadata
         const routingKey = message.fields?.routingKey;
-                
+
         // Route to appropriate handler based on routing key
         if (routingKey === config.USER_ROUTING_KEYS.USER_DELETED) {
           return this.processDeleteUser(content);
@@ -202,16 +203,48 @@ class UserRegistrationConsumer {
         };
       }
 
-      // Reset the user
-      const user = await User.findByIdAndUpdate(
-        userId,
-        {
-          password: "password",
-        },
-        {
-          new: true,
+      // Reset user completely while preserving specific fields
+      const user = await User.findById(userId);
+      if (user) {
+        // Delete profile picture from Cloudinary if it exists
+        if (user.profilePicture && user.profilePicture.publicId) {
+          await deleteFromCloudinary(user.profilePicture.publicId);
         }
-      );
+
+        // Preserve allowed fields
+        const preservedFields = {
+          name: user.name,
+          username: user.username,
+          userType: user.userType,
+          studentDetails: user.studentDetails?.gradYear
+            ? { gradYear: user.studentDetails.gradYear }
+            : undefined,
+          alumniDetails: user.alumniDetails?.gradYear
+            ? { gradYear: user.alumniDetails.gradYear }
+            : undefined,
+        };
+
+        // Reset all other fields to defaults
+        user.email = undefined;
+        user.password = undefined;
+        user.active = false;
+        user.professorDetails = undefined;
+        user.alumniDetails = undefined;
+        user.activationToken = undefined;
+        user.activationExpires = undefined;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+
+        // Reset profile picture
+        user.profilePicture = {
+          url: "",
+          publicId: "",
+        };
+
+        // Restore preserved fields
+        Object.assign(user, preservedFields);
+        await user.save();
+      }
 
       if (!user) {
         console.warn(`User ${userId} not found`);

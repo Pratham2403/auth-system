@@ -1,8 +1,7 @@
 import User from "../../models/User.js";
 import { UserType } from "../../../../../shared/types/user.type.js";
+import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
 
-//Setup This When Doing Integration With CSES
-export const registerUser = async (req) => {};
 
 export const createUser = async (userDatas) => {
   try {
@@ -55,7 +54,7 @@ export const createUser = async (userDatas) => {
   }
 };
 
-export const getUsers = async (req, res) => {};
+// export const getUsers = async (req, res) => {};
 
 export const getUserById = async (req, res) => {
   try {
@@ -101,16 +100,16 @@ export const getUserById = async (req, res) => {
 
     // Find all users matching the search criteria
     const users = await User.find(searchCriteria);
-    
+
     if (!users.length) {
       return res.status(404).json({
         success: false,
         error: "No users found",
       });
     }
-    
+
     // Map users to the desired response format
-    const formattedUsers = users.map(user => ({
+    const formattedUsers = users.map((user) => ({
       id: user._id,
       name: user.name,
       username: user.username,
@@ -123,7 +122,7 @@ export const getUserById = async (req, res) => {
     return res.status(200).json({
       success: true,
       count: users.length,
-      users: formattedUsers
+      users: formattedUsers,
     });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -135,8 +134,85 @@ export const getUserById = async (req, res) => {
   }
 };
 
-export const updateUser = async (req, res) => {};
+// export const updateUser = async (req, res) => {};
 
-export const resetUser = async (req, res) => {};
+export const resetUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
 
-export const deleteUser = async (req, res) => {};
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required",
+      });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    // Delete profile picture from Cloudinary if it exists
+    
+    if (user.profilePicture && user.profilePicture.publicId) {
+      await deleteFromCloudinary(user.profilePicture.publicId);
+    }
+
+    // Preserve allowed fields
+    const preservedFields = {
+      name: user.name,
+      username: user.username,
+      userType: user.userType,
+      studentDetails: user.studentDetails?.gradYear
+        ? { gradYear: user.studentDetails.gradYear }
+        : undefined,
+      alumniDetails: user.alumniDetails?.gradYear
+        ? { gradYear: user.alumniDetails.gradYear }
+        : undefined,
+    };
+
+    // Reset all other fields to defaults
+    user.email = undefined;
+    user.password = undefined;
+    user.active = false;
+    user.professorDetails = undefined;
+    user.activationToken = undefined;
+    user.activationExpires = undefined;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    // Reset profile picture
+    user.profilePicture = {
+      url: "",
+      publicId: "",
+    };
+
+    
+    // Restore preserved fields
+    Object.assign(user, preservedFields);
+
+    await user.save();
+
+    
+
+    return res.status(200).json({
+      success: true,
+      message: `User ${user.username} reset successfully`,
+    });
+  } catch (error) {
+    console.error("Error resetting user:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Error resetting user",
+      message: error.message,
+    });
+  }
+};
+
+// export const deleteUser = async (req, res) => {};
