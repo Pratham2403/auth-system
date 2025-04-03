@@ -60,7 +60,7 @@ export const getUserById = async (req, res) => {
   try {
     // Extract search parameters from the request
     const query = req.params.id ? { _id: req.params.id } : req.body;
-
+    
     // Build the search criteria
     const searchCriteria = {};
 
@@ -117,6 +117,10 @@ export const getUserById = async (req, res) => {
       lastLogin: user.lastLogin,
       status: user.active ? "Active" : "Inactive",
       email: user.email,
+      profilePicture: user.profilePicture,
+      studentDetails: user?.studentDetails,
+      alumniDetails: user?.alumniDetails,
+      professorDetails: user?.professorDetails,
     }));
 
     return res.status(200).json({

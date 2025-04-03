@@ -14,10 +14,12 @@ const router = express.Router();
 
 router.post(
   "/getUserById",
-  authenticate,
-  requireRole(UserType.ADMIN),
+  // authenticate,
+  // requireRole(UserType.ADMIN),
   getUserById
 );
+
+
 router.put("/reset/:id", authenticate, requireRole(UserType.ADMIN), resetUser);
 
 export default router;
