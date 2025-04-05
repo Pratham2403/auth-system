@@ -60,6 +60,9 @@ export const getUserById = async (req, res) => {
   try {
     // Extract search parameters from the request
     const query = req.params.id ? { _id: req.params.id } : req.body;
+
+    console.log("Query", query);
+    
     
     // Build the search criteria
     const searchCriteria = {};

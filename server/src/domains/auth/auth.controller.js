@@ -228,3 +228,165 @@ export const logout = (req, res) => {
     });
   }
 };
+
+// export const initiateSSO = (req, res) => {
+//   const { provider, redirect } = req.query;
+//   const storageType = req.query.storage || "cookie";
+
+//   // Store redirect URL in session (for OAuth callbacks)
+//   req.session.ssoRedirectUrl = redirect || "/dashboard";
+
+//   // Check if provider is specified and valid
+//   if (!provider || !["google", "github", "linkedin"].includes(provider)) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Invalid or missing SSO provider",
+//     });
+//   }
+
+//   // Redirect to appropriate OAuth provider
+//   return res.redirect(`/api/auth/${provider}?storage=${storageType}`);
+// };
+
+// export const googleCallback = (req, res, next) => {
+//   const storageType = req.query.storage || "cookie";
+
+//   passport.authenticate("google", { session: false }, (err, user) => {
+//     if (err) {
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent(
+//           err.message
+//         )}`
+//       );
+//     }
+
+//     if (!user) {
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/error?message=Authentication failed`
+//       );
+//     }
+
+//     // Generate token
+//     const token = user.getSignedJwtToken();
+
+//     // Redirect based on storage type
+//     if (storageType === "cookie") {
+//       // Set cookie
+//       const cookieOptions = {
+//         expires: new Date(
+//           Date.now() +
+//             process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
+//         ),
+//         httpOnly: true,
+//       };
+
+//       if (process.env.NODE_ENV === "production") {
+//         cookieOptions.secure = true;
+//       }
+
+//       res.cookie("token", token, cookieOptions);
+//       return res.redirect(`${process.env.CLIENT_URL}/auth/success`);
+//     } else {
+//       // Redirect with token in URL for local/session storage
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/success?token=${token}`
+//       );
+//     }
+//   })(req, res, next);
+// };
+
+
+// export const githubCallback = (req, res, next) => {
+//   const storageType = req.query.storage || "cookie";
+
+//   passport.authenticate("github", { session: false }, (err, user) => {
+//     if (err) {
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent(
+//           err.message
+//         )}`
+//       );
+//     }
+
+//     if (!user) {
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/error?message=Authentication failed`
+//       );
+//     }
+
+//     // Generate token
+//     const token = user.getSignedJwtToken();
+
+//     // Redirect based on storage type
+//     if (storageType === "cookie") {
+//       // Set cookie
+//       const cookieOptions = {
+//         expires: new Date(
+//           Date.now() +
+//             process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
+//         ),
+//         httpOnly: true,
+//       };
+
+//       if (process.env.NODE_ENV === "production") {
+//         cookieOptions.secure = true;
+//       }
+
+//       res.cookie("token", token, cookieOptions);
+//       return res.redirect(`${process.env.CLIENT_URL}/auth/success`);
+//     } else {
+//       // Redirect with token in URL for local/session storage
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/success?token=${token}`
+//       );
+//     }
+//   })(req, res, next);
+// };
+
+
+// export const linkedinCallback = (req, res, next) => {
+//   const storageType = req.query.storage || "cookie";
+
+//   passport.authenticate("linkedin", { session: false }, (err, user) => {
+//     if (err) {
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent(
+//           err.message
+//         )}`
+//       );
+//     }
+
+//     if (!user) {
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/error?message=Authentication failed`
+//       );
+//     }
+
+//     // Generate token
+//     const token = user.getSignedJwtToken();
+
+//     // Redirect based on storage type
+//     if (storageType === "cookie") {
+//       // Set cookie
+//       const cookieOptions = {
+//         expires: new Date(
+//           Date.now() +
+//             process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
+//         ),
+//         httpOnly: true,
+//       };
+
+//       if (process.env.NODE_ENV === "production") {
+//         cookieOptions.secure = true;
+//       }
+
+//       res.cookie("token", token, cookieOptions);
+//       return res.redirect(`${process.env.CLIENT_URL}/auth/success`);
+//     } else {
+//       // Redirect with token in URL for local/session storage
+//       return res.redirect(
+//         `${process.env.CLIENT_URL}/auth/success?token=${token}`
+//       );
+//     }
+//   })(req, res, next);
+// };
