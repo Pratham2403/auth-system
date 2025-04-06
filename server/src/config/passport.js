@@ -31,7 +31,7 @@ export const configurePassport = () => {
         try {
           // Find user by username
           const user = await User.findOne({ username }).select("+password");
-          
+
           // Check if user exists
           if (!user) {
             return done(null, false, { message: "Invalid credentials" });
@@ -158,7 +158,7 @@ export const configurePassport = () => {
         {
           clientID: process.env.LINKEDIN_CLIENT_ID,
           clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-          callbackURL: "/api/auth/linkedin/callback",
+          callbackURL: "/auth-system/v0/auth/linkedin/callback",
           scope: ["r_emailaddress", "r_liteprofile"],
         },
         async (accessToken, refreshToken, profile, done) => {
