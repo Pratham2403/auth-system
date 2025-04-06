@@ -8,7 +8,6 @@ import { sendActivationEmail } from "../user/email.service.js";
 import { verifyUserDetails } from "../user/user.service.js";
 import { uploadOnCloudinary } from "../../config/coludinaryConnection.js";
 
-// Helper function to generate token and handle response
 const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
   // Create token
   const token = user.getSignedJwtToken();
@@ -71,6 +70,48 @@ const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
           provider: user.provider,
         },
       });
+  }
+};
+
+export const validateCredentials = async (req, res, next) => {
+  try {
+    const { username, password } = req.body;
+
+    // Check if username and password are provided
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide username and password",
+      });
+    }
+
+    // Find user by username
+    const user = await User.findOne({ username }).select("+password");
+
+    // Check if user exists
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Check if password matches
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    // Return success without token or sensitive user data
+    return res.status(200).json({
+      success: true,
+      message: "Credentials validated successfully",
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -229,164 +270,126 @@ export const logout = (req, res) => {
   }
 };
 
-// export const initiateSSO = (req, res) => {
-//   const { provider, redirect } = req.query;
-//   const storageType = req.query.storage || "cookie";
+// Get current user
+export const getCurrentUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
 
-//   // Store redirect URL in session (for OAuth callbacks)
-//   req.session.ssoRedirectUrl = redirect || "/dashboard";
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-//   // Check if provider is specified and valid
-//   if (!provider || !["google", "github", "linkedin"].includes(provider)) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Invalid or missing SSO provider",
-//     });
-//   }
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        userType: user.userType,
+        profilePicture: user.profilePicture,
+        provider: user.provider,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user profile",
+    });
+  }
+};
 
-//   // Redirect to appropriate OAuth provider
-//   return res.redirect(`/api/auth/${provider}?storage=${storageType}`);
-// };
+export const initiateSSO = (req, res) => {
+  const { provider, redirect } = req.query;
+  const storageType = req.query.storage || "cookie";
 
-// export const googleCallback = (req, res, next) => {
-//   const storageType = req.query.storage || "cookie";
+  // Store redirect URL in session (for OAuth callbacks)
+  req.session.ssoRedirectUrl = redirect || "/dashboard";
 
-//   passport.authenticate("google", { session: false }, (err, user) => {
-//     if (err) {
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent(
-//           err.message
-//         )}`
-//       );
-//     }
+  // Check if provider is specified and valid
+  if (!provider || !["google", "github", "linkedin"].includes(provider)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or missing SSO provider",
+    });
+  }
 
-//     if (!user) {
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/error?message=Authentication failed`
-//       );
-//     }
+  // Redirect to appropriate OAuth provider
+  return res.redirect(`/api/auth/${provider}?storage=${storageType}`);
+};
 
-//     // Generate token
-//     const token = user.getSignedJwtToken();
+// LinkedIn OAuth callback - only for login (not signup)
+export const linkedinCallback = (req, res, next) => {
+  const storageType = req.query.storage || "local";
+  const redirectUrl =
+    req.query.redirect || `${process.env.CLIENT_URL}/auth/success`;
 
-//     // Redirect based on storage type
-//     if (storageType === "cookie") {
-//       // Set cookie
-//       const cookieOptions = {
-//         expires: new Date(
-//           Date.now() +
-//             process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
-//         ),
-//         httpOnly: true,
-//       };
+  passport.authenticate(
+    "linkedin",
+    { session: false },
+    async (err, user, info) => {
+      if (err) {
+        console.error("LinkedIn authentication error:", err);
+        return res.redirect(
+          `${redirectUrl}?error=${encodeURIComponent(
+            err.message || "LinkedIn authentication failed"
+          )}`
+        );
+      }
 
-//       if (process.env.NODE_ENV === "production") {
-//         cookieOptions.secure = true;
-//       }
+      if (!user) {
+        // If no user was found, this means the user doesn't exist
+        // Since we're implementing login only (not signup), we redirect with error
+        return res.redirect(
+          `${redirectUrl}?error=${encodeURIComponent(
+            "No account found with these credentials. LinkedIn login is for existing users only."
+          )}`
+        );
+      }
 
-//       res.cookie("token", token, cookieOptions);
-//       return res.redirect(`${process.env.CLIENT_URL}/auth/success`);
-//     } else {
-//       // Redirect with token in URL for local/session storage
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/success?token=${token}`
-//       );
-//     }
-//   })(req, res, next);
-// };
+      try {
+        // Generate token
+        const token = user.getSignedJwtToken();
 
+        // Update last login time
+        await User.findByIdAndUpdate(
+          user._id,
+          { lastLogin: Date.now() },
+          { new: false }
+        );
 
-// export const githubCallback = (req, res, next) => {
-//   const storageType = req.query.storage || "cookie";
+        // Redirect based on storage type
+        if (storageType === "cookie") {
+          // Set cookie
+          const cookieOptions = {
+            expires: new Date(
+              Date.now() +
+                process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
+            ),
+            httpOnly: true,
+          };
 
-//   passport.authenticate("github", { session: false }, (err, user) => {
-//     if (err) {
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent(
-//           err.message
-//         )}`
-//       );
-//     }
+          if (process.env.NODE_ENV === "production") {
+            cookieOptions.secure = true;
+          }
 
-//     if (!user) {
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/error?message=Authentication failed`
-//       );
-//     }
-
-//     // Generate token
-//     const token = user.getSignedJwtToken();
-
-//     // Redirect based on storage type
-//     if (storageType === "cookie") {
-//       // Set cookie
-//       const cookieOptions = {
-//         expires: new Date(
-//           Date.now() +
-//             process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
-//         ),
-//         httpOnly: true,
-//       };
-
-//       if (process.env.NODE_ENV === "production") {
-//         cookieOptions.secure = true;
-//       }
-
-//       res.cookie("token", token, cookieOptions);
-//       return res.redirect(`${process.env.CLIENT_URL}/auth/success`);
-//     } else {
-//       // Redirect with token in URL for local/session storage
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/success?token=${token}`
-//       );
-//     }
-//   })(req, res, next);
-// };
-
-
-// export const linkedinCallback = (req, res, next) => {
-//   const storageType = req.query.storage || "cookie";
-
-//   passport.authenticate("linkedin", { session: false }, (err, user) => {
-//     if (err) {
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent(
-//           err.message
-//         )}`
-//       );
-//     }
-
-//     if (!user) {
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/error?message=Authentication failed`
-//       );
-//     }
-
-//     // Generate token
-//     const token = user.getSignedJwtToken();
-
-//     // Redirect based on storage type
-//     if (storageType === "cookie") {
-//       // Set cookie
-//       const cookieOptions = {
-//         expires: new Date(
-//           Date.now() +
-//             process.env.JWT_EXPIRE.match(/(\d+)d/)[1] * 24 * 60 * 60 * 1000
-//         ),
-//         httpOnly: true,
-//       };
-
-//       if (process.env.NODE_ENV === "production") {
-//         cookieOptions.secure = true;
-//       }
-
-//       res.cookie("token", token, cookieOptions);
-//       return res.redirect(`${process.env.CLIENT_URL}/auth/success`);
-//     } else {
-//       // Redirect with token in URL for local/session storage
-//       return res.redirect(
-//         `${process.env.CLIENT_URL}/auth/success?token=${token}`
-//       );
-//     }
-//   })(req, res, next);
-// };
+          res.cookie("token", token, cookieOptions);
+          return res.redirect(`${redirectUrl}?success=true`);
+        } else {
+          // Redirect with token in URL for local/session storage
+          return res.redirect(`${redirectUrl}?token=${token}&success=true`);
+        }
+      } catch (error) {
+        console.error("Error generating token:", error);
+        return res.redirect(
+          `${redirectUrl}?error=${encodeURIComponent(
+            "Error during authentication"
+          )}`
+        );
+      }
+    }
+  )(req, res, next);
+};

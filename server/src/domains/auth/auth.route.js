@@ -5,6 +5,8 @@ import {
   logout,
   register,
   setPassword,
+  validateCredentials,
+  getCurrentUser,
   linkedinCallback,
 } from "./auth.controller.js";
 import { authenticate } from "../../../../../shared/middlewares/auth.middleware.js";
@@ -14,27 +16,29 @@ import passport from "passport";
 const router = express.Router();
 
 router.post("/login", login);
+router.post("/validate-credentials", validateCredentials);
 router.get("/logout", authenticate, logout);
 router.post("/register", upload.single("profilePicture"), register);
 router.post("/set-password", setPassword);
+router.get("/me", authenticate, getCurrentUser);
 
-// // LinkedIn OAuth routes
-// router.get("/linkedin", (req, res, next) => {
-//   // Pass storage type to callback
-//   const storageType = req.query.storage || "cookie";
-//   passport.authenticate("linkedin", {
-//     state: storageType,
-//   })(req, res, next);
-// });
+// LinkedIn OAuth routes
+router.get("/linkedin", (req, res, next) => {
+  // Pass storage type to callback
+  const storageType = req.query.storage || "cookie";
+  passport.authenticate("linkedin", {
+    state: storageType,
+  })(req, res, next);
+});
 
-// router.get(
-//   "/linkedin/callback",
-//   (req, res, next) => {
-//     // Get storage type from state
-//     req.query.storage = req.query.state;
-//     next();
-//   },
-//   linkedinCallback
-// );
+router.get(
+  "/linkedin/callback",
+  (req, res, next) => {
+    // Get storage type from state
+    req.query.storage = req.query.state;
+    next();
+  },
+  linkedinCallback
+);
 
 export default router;
