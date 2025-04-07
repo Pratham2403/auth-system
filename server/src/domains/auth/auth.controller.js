@@ -1,12 +1,9 @@
 import User from "../../models/User.js";
 import passport from "passport";
-import crypto from "crypto";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
+
 import { sendActivationEmail } from "../user/email.service.js";
 import { verifyUserDetails } from "../user/user.service.js";
-import { uploadOnCloudinary } from "../../config/coludinaryConnection.js";
+import { UserType } from "../../../../../shared/types/user.type.js";
 
 const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
   // Create token
@@ -115,9 +112,18 @@ export const validateCredentials = async (req, res, next) => {
   }
 };
 
-export const register = async (req, res, next) => {
+export const register = async (userData) => {
   try {
-    const { name, username, userType, email } = req.body;
+    const {
+      name,
+      username,
+      userType,
+      email,
+      // Professional details
+      professorDetails,
+      studentDetails,
+      alumniDetails,
+    } = userData;
 
     if (!name || !username || !userType || !email) {
       return res.status(400).json({
@@ -127,29 +133,61 @@ export const register = async (req, res, next) => {
       });
     }
 
+    // Validate user type specific data
+    if (
+      userType === UserType.PROFESSOR &&
+      (!professorDetails || !professorDetails.position)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Professor details including position are required",
+      });
+    }
+
+    if (
+      userType === UserType.STUDENT &&
+      (!studentDetails || !studentDetails.gradYear || !studentDetails.degree || !studentDetails.admissionNumber)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Student details including graduation year and degree are required",
+      });
+    }
+
+    if (
+      userType === UserType.ALUMNI &&
+      (!alumniDetails || !alumniDetails.gradYear)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Alumni details including graduation year are required",
+      });
+    }
+
     // Verify user details against existing information
     const user = await verifyUserDetails(userType, username, name);
 
-    // Update user with email
+    // Update user with email and type-specific details
     user.email = email;
 
-    // Handle profile picture upload if file exists
-    if (req.file) {
-      try {
-        // Upload image to Cloudinary
-        const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
-
-        if (cloudinaryResponse) {
-          // Set profile picture details
-          user.profilePicture = {
-            url: cloudinaryResponse.url,
-            publicId: cloudinaryResponse.public_id,
-          };
-        }
-      } catch (uploadError) {
-        console.error("Error uploading profile picture:", uploadError);
-        // Continue registration even if image upload fails
-      }
+    // Add user type specific details
+    if (userType === UserType.PROFESSOR && professorDetails) {
+      user.professorDetails = {
+        position: professorDetails.position,
+        googleScholarLink: professorDetails.googleScholarLink || "",
+      };
+    } else if (userType === UserType.STUDENT && studentDetails) {
+      user.studentDetails = {
+        gradYear: studentDetails.gradYear,
+        degree: studentDetails.degree,
+        admissionNumber: studentDetails.admissionNumber || "",
+      };
+    } else if (userType === UserType.ALUMNI && alumniDetails) {
+      user.alumniDetails = {
+        gradYear: alumniDetails.gradYear,
+        linkedInProfile: alumniDetails.linkedInProfile || "",
+      };
     }
 
     await user.save();
@@ -302,24 +340,24 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
-export const initiateSSO = (req, res) => {
-  const { provider, redirect } = req.query;
-  const storageType = req.query.storage || "cookie";
+// export const initiateSSO = (req, res) => {
+//   const { provider, redirect } = req.query;
+//   const storageType = req.query.storage || "cookie";
 
-  // Store redirect URL in session (for OAuth callbacks)
-  req.session.ssoRedirectUrl = redirect || "/dashboard";
+//   // Store redirect URL in session (for OAuth callbacks)
+//   req.session.ssoRedirectUrl = redirect || "/dashboard";
 
-  // Check if provider is specified and valid
-  if (!provider || !["google", "github", "linkedin"].includes(provider)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid or missing SSO provider",
-    });
-  }
+//   // Check if provider is specified and valid
+//   if (!provider || !["google", "github", "linkedin"].includes(provider)) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Invalid or missing SSO provider",
+//     });
+//   }
 
-  // Redirect to appropriate OAuth provider
-  return res.redirect(`/api/auth/${provider}?storage=${storageType}`);
-};
+//   // Redirect to appropriate OAuth provider
+//   return res.redirect(`/api/auth/${provider}?storage=${storageType}`);
+// };
 
 // LinkedIn OAuth callback - only for login (not signup)
 export const linkedinCallback = (req, res, next) => {

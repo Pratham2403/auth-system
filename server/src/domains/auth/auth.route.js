@@ -18,7 +18,7 @@ const router = express.Router();
 router.post("/login", login);
 router.post("/validate-credentials", validateCredentials);
 router.get("/logout", authenticate, logout);
-router.post("/register", upload.single("profilePicture"), register);
+router.post("/register", register);
 router.post("/set-password", setPassword);
 router.get("/me", authenticate, getCurrentUser);
 

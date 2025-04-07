@@ -3,6 +3,7 @@ import config from "../../../../../shared/rabbitmq/user.configuration.js";
 import User from "../../models/User.js";
 import { UserType } from "../../../../../shared/types/user.type.js";
 import { createUser } from "../../domains/user/user.controller.js";
+import { register } from "../../domains/auth/auth.controller.js";
 import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
 
 class UserRegistrationConsumer {
@@ -34,6 +35,8 @@ class UserRegistrationConsumer {
           return this.processDeleteUser(content);
         } else if (routingKey === config.USER_ROUTING_KEYS.USER_RESET) {
           return this.processResetUser(content);
+        } else if (routingKey === config.USER_ROUTING_KEYS.USER_CREATED) {
+          return this.processCreateUser(content);
         } else {
           console.warn(`Unhandled routing key: ${routingKey}`);
           return {
@@ -265,26 +268,44 @@ class UserRegistrationConsumer {
     }
   }
 
-  // /**
-  //  * Publish registration results to a status update queue
-  //  * @param {Object} results - Registration results
-  //  * @param {Object} requestedBy - Information about who requested the registration
-  //  */
-  // async publishRegistrationResults(results, requestedBy) {
-  //   try {
-  //     await this.client.publishToExchange(
-  //       config.USER_EXCHANGES.USER,
-  //       config.USER_ROUTING_KEYS.BULK_REGISTRATION_RESULT,
-  //       {
-  //         results,
-  //         requestedBy,
-  //         timestamp: new Date().toISOString()
-  //       }
-  //     );
-  //   } catch (error) {
-  //     console.error("Failed to publish registration results:", error);
-  //   }
-  // }
+  async processCreateUser(message) {
+    try {
+      const { userData, requestedBy} = message;
+      console.log(`Processing user creation for ${userData.username}`);
+
+      // Check if the requesting user has admin privileges
+      const hasAdminRights = await this.isAdmin(requestedBy);
+
+      if (!hasAdminRights) {
+        console.warn(
+          `Unauthorized user creation attempt by user ${requestedBy}`
+        );
+        return {
+          success: false,
+          error: "Unauthorized: Only administrators can create users",
+        };
+      }
+
+      const user = await register(userData);
+
+      if (!user) {
+        console.warn(`Failed to create user ${userData.username}`);
+        return {
+          success: false,
+          error: "Failed to create user",
+        };
+      }
+
+      console.log(`User ${userData.username} created successfully`);
+      return {
+        success: true,
+        message: user.message,
+      };
+    } catch (error) {
+      console.error("Error processing user creation:", error);
+      throw error;
+    }
+  }
 }
 
 const userRegistrationConsumer = new UserRegistrationConsumer();
