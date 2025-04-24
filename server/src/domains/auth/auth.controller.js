@@ -201,7 +201,11 @@ export const register = async (userData) => {
         "User registered successfully. Please check your email to set your password.",
     });
   } catch (error) {
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: "Error registering user",
+      error: error.message,
+    });
   }
 };
 
