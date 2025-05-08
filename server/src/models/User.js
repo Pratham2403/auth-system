@@ -128,6 +128,12 @@ UserSchema.pre("save", async function (next) {
 
 // Schema validation middleware
 UserSchema.pre("validate", function (next) {
+  // Convert student admission number to lowercase if present
+  if (this.studentDetails && this.studentDetails.admissionNumber) {
+    this.studentDetails.admissionNumber =
+      this.studentDetails.admissionNumber.toLowerCase();
+  }
+
   if (this.userType === UserType.STUDENT && !this.studentDetails.gradYear) {
     this.invalidate(
       "studentDetails.gradYear",

@@ -24,13 +24,12 @@ export const createUser = async (userDatas) => {
 
     // Register the user
     const userData = {
-      username,
       name,
       userType,
     };
 
     if (userType === UserType.STUDENT) {
-      userData.studentDetails = { gradYear };
+      userData.studentDetails = { gradYear, username: username.toLowerCase() };
     }
 
     if (userType === UserType.ALUMNI) {

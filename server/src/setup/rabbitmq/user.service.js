@@ -219,8 +219,11 @@ class UserRegistrationConsumer {
           name: user.name,
           username: user.username,
           userType: user.userType,
-          studentDetails: user.studentDetails?.gradYear
-            ? { gradYear: user.studentDetails.gradYear }
+          studentDetails: user.studentDetails?.admissionNumber
+            ? {
+                admissionNumber: user.studentDetails.admissionNumber,
+                gradYear: user.studentDetails.gradYear,
+              }
             : undefined,
           alumniDetails: user.alumniDetails?.gradYear
             ? { gradYear: user.alumniDetails.gradYear }
@@ -233,6 +236,7 @@ class UserRegistrationConsumer {
         user.active = false;
         user.professorDetails = undefined;
         user.alumniDetails = undefined;
+        // user.studentDetails = undefined;
         user.activationToken = undefined;
         user.activationExpires = undefined;
         user.resetPasswordToken = undefined;
@@ -270,23 +274,13 @@ class UserRegistrationConsumer {
 
   async processCreateUser(message) {
     try {
-      const { userData, requestedBy} = message;
+      const { userData, requestedBy, userType } = message;
       console.log(`Processing user creation for ${userData.username}`);
 
       // Check if the requesting user has admin privileges
-      const hasAdminRights = await this.isAdmin(requestedBy);
-
-      if (!hasAdminRights) {
-        console.warn(
-          `Unauthorized user creation attempt by user ${requestedBy}`
-        );
-        return {
-          success: false,
-          error: "Unauthorized: Only administrators can create users",
-        };
-      }
 
       const user = await register(userData);
+      console.log("From ser Service", user);
 
       if (!user) {
         console.warn(`Failed to create user ${userData.username}`);

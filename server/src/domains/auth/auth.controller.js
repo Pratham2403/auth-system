@@ -124,13 +124,13 @@ export const register = async (userData) => {
       studentDetails,
       alumniDetails,
     } = userData;
-
+    
     if (!name || !username || !userType || !email) {
-      return res.status(400).json({
+      return {
         success: false,
         message:
           "Please provide all required fields: name, username, userType, email",
-      });
+      };
     }
 
     // Validate user type specific data
@@ -138,38 +138,40 @@ export const register = async (userData) => {
       userType === UserType.PROFESSOR &&
       (!professorDetails || !professorDetails.position)
     ) {
-      return res.status(400).json({
+      return {
         success: false,
         message: "Professor details including position are required",
-      });
+      };
     }
 
     if (
       userType === UserType.STUDENT &&
       (!studentDetails || !studentDetails.gradYear || !studentDetails.degree || !studentDetails.admissionNumber)
     ) {
-      return res.status(400).json({
+      return {
         success: false,
         message:
           "Student details including graduation year and degree are required",
-      });
+      };
     }
 
     if (
       userType === UserType.ALUMNI &&
       (!alumniDetails || !alumniDetails.gradYear)
     ) {
-      return res.status(400).json({
+      return {
         success: false,
         message: "Alumni details including graduation year are required",
-      });
+      };
     }
 
     // Verify user details against existing information
-    const user = await verifyUserDetails(userType, username, name);
-
+    const user = await verifyUserDetails(userType, email, name, studentDetails.admissionNumber);
+    console.log("User from Auth", user);
+    
     // Update user with email and type-specific details
     user.email = email;
+    user.username = username;
 
     // Add user type specific details
     if (userType === UserType.PROFESSOR && professorDetails) {
@@ -181,7 +183,6 @@ export const register = async (userData) => {
       user.studentDetails = {
         gradYear: studentDetails.gradYear,
         degree: studentDetails.degree,
-        admissionNumber: studentDetails.admissionNumber || "",
       };
     } else if (userType === UserType.ALUMNI && alumniDetails) {
       user.alumniDetails = {
@@ -195,23 +196,25 @@ export const register = async (userData) => {
     // Send activation email with token
     await sendActivationEmail(user, email);
 
-    res.status(201).json({
+    return { 
       success: true,
       message:
         "User registered successfully. Please check your email to set your password.",
-    });
+    };
   } catch (error) {
-    res.status(500).json({
+    return {
       success: false,
       message: "Error registering user",
       error: error.message,
-    });
+    };
   }
 };
 
 export const setPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
+    console.log("Token:", token);
+    
 
     if (!token || !newPassword) {
       return res.status(400).json({
