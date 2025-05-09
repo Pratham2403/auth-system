@@ -119,11 +119,13 @@ export const register = async (userData) => {
       username,
       userType,
       email,
+      profilePicture,
       // Professional details
       professorDetails,
       studentDetails,
       alumniDetails,
     } = userData;
+
     
     if (!name || !username || !userType || !email) {
       return {
@@ -172,6 +174,10 @@ export const register = async (userData) => {
     // Update user with email and type-specific details
     user.email = email;
     user.username = username;
+    user.profilePicture = profilePicture || {
+      url: "",
+      publicId: "",
+    };
 
     // Add user type specific details
     if (userType === UserType.PROFESSOR && professorDetails) {
@@ -183,6 +189,7 @@ export const register = async (userData) => {
       user.studentDetails = {
         gradYear: studentDetails.gradYear,
         degree: studentDetails.degree,
+        admissionNumber: studentDetails.admissionNumber,
       };
     } else if (userType === UserType.ALUMNI && alumniDetails) {
       user.alumniDetails = {

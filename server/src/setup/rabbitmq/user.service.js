@@ -5,6 +5,7 @@ import { UserType } from "../../../../../shared/types/user.type.js";
 import { createUser } from "../../domains/user/user.controller.js";
 import { register } from "../../domains/auth/auth.controller.js";
 import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
+import { log } from "console";
 
 class UserRegistrationConsumer {
   constructor() {
@@ -169,6 +170,10 @@ class UserRegistrationConsumer {
       // Delete the user
       const user = await User.findByIdAndDelete(userId);
 
+      if (user.profilePicture && user.profilePicture.publicId) {
+        await deleteFromCloudinary(user.profilePicture.publicId);
+      }
+
       if (!user) {
         console.warn(`User ${userId} not found`);
         return {
@@ -213,13 +218,13 @@ class UserRegistrationConsumer {
         if (user.profilePicture && user.profilePicture.publicId) {
           await deleteFromCloudinary(user.profilePicture.publicId);
         }
+        
 
         // Preserve allowed fields
         const preservedFields = {
           name: user.name,
-          username: user.username,
           userType: user.userType,
-          studentDetails: user.studentDetails?.admissionNumber
+          studentDetails: user?.studentDetails?.admissionNumber
             ? {
                 admissionNumber: user.studentDetails.admissionNumber,
                 gradYear: user.studentDetails.gradYear,
@@ -230,12 +235,16 @@ class UserRegistrationConsumer {
             : undefined,
         };
 
+        console.log(preservedFields);
+        
+
         // Reset all other fields to defaults
         user.email = undefined;
         user.password = undefined;
         user.active = false;
         user.professorDetails = undefined;
-        user.alumniDetails = undefined;
+        user.username = undefined;
+        // user.alumniDetails = undefined;
         // user.studentDetails = undefined;
         user.activationToken = undefined;
         user.activationExpires = undefined;
@@ -280,7 +289,6 @@ class UserRegistrationConsumer {
       // Check if the requesting user has admin privileges
 
       const user = await register(userData);
-      console.log("From ser Service", user);
 
       if (!user) {
         console.warn(`Failed to create user ${userData.username}`);

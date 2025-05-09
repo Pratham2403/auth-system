@@ -2,7 +2,6 @@ import User from "../../models/User.js";
 import { UserType } from "../../../../../shared/types/user.type.js";
 import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
 
-
 export const createUser = async (userDatas) => {
   try {
     console.log("Registered Users", userDatas);
@@ -29,7 +28,10 @@ export const createUser = async (userDatas) => {
     };
 
     if (userType === UserType.STUDENT) {
-      userData.studentDetails = { gradYear, username: username.toLowerCase() };
+      userData.studentDetails = {
+        gradYear,
+        admissionNumber: username.toLowerCase(),
+      };
     }
 
     if (userType === UserType.ALUMNI) {
@@ -60,8 +62,6 @@ export const getUserById = async (req, res) => {
     // Extract search parameters from the request
     const query = req.params.id ? { _id: req.params.id } : req.body;
 
-    
-    
     // Build the search criteria
     const searchCriteria = {};
 
@@ -98,10 +98,9 @@ export const getUserById = async (req, res) => {
         ];
       }
     }
-    
+
     // Find all users matching the search criteria
     const users = await User.find(searchCriteria);
-    
 
     if (!users.length) {
       return res.status(404).json({
@@ -145,7 +144,6 @@ export const getUserById = async (req, res) => {
 export const resetUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    
 
     if (!userId) {
       return res.status(400).json({
@@ -165,7 +163,7 @@ export const resetUser = async (req, res) => {
     }
 
     // Delete profile picture from Cloudinary if it exists
-    
+
     if (user.profilePicture && user.profilePicture.publicId) {
       await deleteFromCloudinary(user.profilePicture.publicId);
     }
@@ -199,13 +197,10 @@ export const resetUser = async (req, res) => {
       publicId: "",
     };
 
-    
     // Restore preserved fields
     Object.assign(user, preservedFields);
 
     await user.save();
-
-    
 
     return res.status(200).json({
       success: true,
