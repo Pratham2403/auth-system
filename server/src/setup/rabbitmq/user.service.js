@@ -48,7 +48,6 @@ class UserRegistrationConsumer {
       }
     );
 
-    console.log("Auth System Messaganger Initialized initialized");
   }
 
   /**
@@ -77,9 +76,7 @@ class UserRegistrationConsumer {
   async processBulkRegistration(message) {
     try {
       const { users, requestedBy } = message;
-      console.log(
-        `Processing bulk registration of ${users.length} users requested by ${requestedBy.userId}`
-      );
+
 
       // Check if the requesting user has admin privileges
       const hasAdminRights = await this.isAdmin(requestedBy.userId);
@@ -152,9 +149,7 @@ class UserRegistrationConsumer {
   async processDeleteUser(message) {
     try {
       const { userId, requestedBy } = message;
-      console.log(
-        `Processing delete user ${userId} requested by ${requestedBy}`
-      );
+
 
       // Check if the requesting user has admin privileges
       const hasAdminRights = await this.isAdmin(requestedBy);
@@ -182,7 +177,6 @@ class UserRegistrationConsumer {
         };
       }
 
-      console.log(`User ${user.username} deleted successfully`);
       return {
         success: true,
         message: `User ${user.username} deleted successfully`,
@@ -235,7 +229,6 @@ class UserRegistrationConsumer {
             : undefined,
         };
 
-        console.log(preservedFields);
         
 
         // Reset all other fields to defaults
@@ -284,7 +277,6 @@ class UserRegistrationConsumer {
   async processCreateUser(message) {
     try {
       const { userData, requestedBy, userType } = message;
-      console.log(`Processing user creation for ${userData.username}`);
 
       // Check if the requesting user has admin privileges
 

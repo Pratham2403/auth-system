@@ -169,7 +169,6 @@ export const register = async (userData) => {
 
     // Verify user details against existing information
     const user = await verifyUserDetails(userType, email, name, studentDetails.admissionNumber);
-    console.log("User from Auth", user);
     
     // Update user with email and type-specific details
     user.email = email;
@@ -220,7 +219,6 @@ export const register = async (userData) => {
 export const setPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
-    console.log("Token:", token);
     
 
     if (!token || !newPassword) {

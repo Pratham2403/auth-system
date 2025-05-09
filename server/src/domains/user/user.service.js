@@ -37,7 +37,6 @@ export const verifyUserDetails = async (
     });
   }
 
-  console.log("User from Auth", user);
 
   if (!user) {
     const error = new Error("User not found. Please check your details.");

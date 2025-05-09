@@ -4,38 +4,77 @@ import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
 
 export const createUser = async (userDatas) => {
   try {
-    console.log("Registered Users", userDatas);
-
     const { username, name, userType, gradYear } = userDatas;
-
-    //Check if user exists
-    const user = await User.findOne({
-      username,
-    });
-    if (user) {
-      return {
-        success: false,
-        error: "User already exists",
-        username,
-        name,
-      };
-    }
-
-    // Register the user
     const userData = {
       name,
       userType,
     };
 
     if (userType === UserType.STUDENT) {
+      const admissionNumber = username.toLowerCase();
+      if (!admissionNumber) {
+        return {
+          success: false,
+          error: "Admission number is required",
+          username,
+          name,
+        };
+      }
+      const user = await User.findOne({
+        "studentDetails.admissionNumber": admissionNumber,
+        userType,
+      });
+      if (user) {
+        return {
+          success: false,
+          error: "User already exists",
+          username,
+          name,
+        };
+      }
       userData.studentDetails = {
         gradYear,
         admissionNumber: username.toLowerCase(),
       };
-    }
-
-    if (userType === UserType.ALUMNI) {
-      userData.alumniDetails = { gradYear };
+    } else if (userType === UserType.PROFESSOR) {
+      const email = username.toLowerCase();
+      if (!email) {
+        return {
+          success: false,
+          error: "Email is required",
+          username,
+          name,
+        };
+      }
+      const user = await User.findOne({
+        email,
+        userType,
+      });
+      if (user) {
+        return {
+          success: false,
+          error: "User already exists",
+          username,
+          name,
+        };
+      }
+      userData.email = email;
+    } else if (userType === UserType.ALUMNI) {
+      const user = await User.findOne({
+        name,
+        userType,
+      });
+      if (user) {
+        return {
+          success: false,
+          error: "User already exists",
+          username,
+          name,
+        };
+      }
+      userData.alumniDetails = {
+        gradYear,
+      };
     }
 
     const result = await new User(userData).save();
