@@ -27,7 +27,7 @@ export const verifyUserDetails = async (
     });
   } else if (userType === UserType.PROFESSOR) {
     user = await User.findOne({
-      email: email.toLowerCase(),
+      email: email,
       userType,
     });
   } else if (userType === UserType.ALUMNI) {

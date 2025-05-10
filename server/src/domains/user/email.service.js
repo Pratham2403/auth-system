@@ -100,6 +100,7 @@ export const sendActivationEmail = async (user, email) => {
 
   // Send email
   await sendEmail({
+    from: "webcseiitism@gmail.com",
     to: email,
     subject: "Set Your Password",
     html: htmlTemplate,
