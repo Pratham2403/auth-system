@@ -32,6 +32,7 @@ const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
         user: {
           id: user._id,
           name: user.name,
+          username: user?.username || "",
           email: user.email,
           userType: user.userType,
           profilePicture: user.profilePicture,
@@ -47,6 +48,7 @@ const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
         user: {
           id: user._id,
           name: user.name,
+          username: user?.username || "",
           email: user.email,
           userType: user.userType,
           profilePicture: user.profilePicture,
@@ -61,6 +63,7 @@ const sendTokenResponse = (user, statusCode, res, storageType = "local") => {
         user: {
           id: user._id,
           name: user.name,
+          username: user?.username || "",
           email: user.email,
           userType: user.userType,
           profilePicture: user.profilePicture,
