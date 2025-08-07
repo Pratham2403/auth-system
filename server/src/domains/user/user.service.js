@@ -32,6 +32,7 @@ export const verifyUserDetails = async (
     });
   } else if (userType === UserType.ALUMNI) {
     user = await User.findOne({
+      "alumniDetails.gradYear": admissionNumber,
       name,
       userType,
     });

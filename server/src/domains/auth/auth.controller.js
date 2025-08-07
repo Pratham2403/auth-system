@@ -171,7 +171,7 @@ export const register = async (userData) => {
     }
 
     // Verify user details against existing information
-    const user = await verifyUserDetails(userType, email, name, studentDetails?.admissionNumber);
+    const user = await verifyUserDetails(userType, email, name, studentDetails?.admissionNumber || alumniDetails?.gradYear);
     
     // Update user with email and type-specific details
     user.email = email;
