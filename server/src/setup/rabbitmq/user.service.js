@@ -263,10 +263,10 @@ class UserRegistrationConsumer {
         };
       }
 
-      console.log(`User ${user.username} reset successfully`);
+      console.log(`User ${user.id} reset successfully`);
       return {
         success: true,
-        message: `User ${user.username} reset successfully`,
+        message: `User ${user.id} reset successfully`,
       };
     } catch (error) {
       console.error("Error processing reset user:", error);

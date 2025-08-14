@@ -243,7 +243,7 @@ export const resetUser = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `User ${user.username} reset successfully`,
+      message: `User ${user.id} reset successfully`,
     });
   } catch (error) {
     console.error("Error resetting user:", error);
