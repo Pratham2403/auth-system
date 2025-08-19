@@ -255,4 +255,134 @@ export const resetUser = async (req, res) => {
   }
 };
 
+export const getAllUsers = async (req, res) => {
+  try {
+    // Pagination, filtering and projection for scalability
+    const {
+      page = 1,
+      limit = 100,
+      userTypes, // array of UserType values
+      search, // free text search for name/email/username/admission no
+      gradYear, // filter by graduation year (students/alumni)
+      onlyActive, // boolean
+      fields, // optional array of field paths to project
+      sortBy = "updatedAt",
+      sortOrder = "desc",
+    } = req.body || {};
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const pageSize = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 5000);
+
+    // Build filter
+    const filter = {};
+    if (Array.isArray(userTypes) && userTypes.length > 0) {
+      filter.userType = { $in: userTypes };
+    }
+    if (onlyActive === true) {
+      filter.active = true;
+    }
+    if (gradYear) {
+      filter.$or = [
+        { "studentDetails.gradYear": gradYear },
+        { "alumniDetails.gradYear": gradYear },
+      ];
+    }
+    if (search && typeof search === "string" && search.trim().length > 0) {
+      const s = search.trim();
+      const regex = new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+      filter.$or = [
+        ...(filter.$or || []),
+        { name: { $regex: regex } },
+        { email: { $regex: regex } },
+        { username: { $regex: regex } },
+        { "studentDetails.admissionNumber": { $regex: regex } },
+      ];
+    }
+
+    // Default projection to keep payload lean
+    const defaultProjection = [
+      "name",
+      "username",
+      "userType",
+      "email",
+      "lastLogin",
+      "active",
+      "profilePicture.url",
+      "studentDetails.gradYear",
+      "studentDetails.admissionNumber",
+      "alumniDetails.gradYear",
+      "professorDetails.position",
+    ];
+    const projectionList =
+      Array.isArray(fields) && fields.length > 0 ? fields : defaultProjection;
+    const projection = projectionList.join(" ");
+
+    const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+
+    // Query with lean() for performance
+    const [items, total, counts] = await Promise.all([
+      User.find(filter)
+        .select(projection)
+        .sort(sort)
+        .skip((pageNum - 1) * pageSize)
+        .limit(pageSize)
+        .lean(),
+      User.countDocuments(filter),
+      User.aggregate([
+        { $match: filter },
+        { $group: { _id: "$userType", count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const countsByType = counts.reduce((acc, cur) => {
+      acc[cur._id] = cur.count;
+      return acc;
+    }, {});
+
+    // Map users to a normalized lightweight shape
+    const users = items.map((u) => ({
+      id: u._id?.toString?.() || u.id,
+      name: u.name,
+      username: u.username,
+      userType: u.userType,
+      email: u.email,
+      lastLogin: u.lastLogin,
+      status: u.active ? "Active" : "Inactive",
+      profilePicture: u.profilePicture?.url
+        ? { url: u.profilePicture.url }
+        : undefined,
+      studentDetails: u.studentDetails
+        ? {
+            gradYear: u.studentDetails.gradYear,
+            admissionNumber: u.studentDetails.admissionNumber,
+          }
+        : undefined,
+      alumniDetails: u.alumniDetails
+        ? { gradYear: u.alumniDetails.gradYear }
+        : undefined,
+      professorDetails: u.professorDetails
+        ? { position: u.professorDetails.position }
+        : undefined,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      page: pageNum,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+      countsByType,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Error fetching users",
+      message: error.message,
+    });
+  }
+};
+
 // export const deleteUser = async (req, res) => {};
