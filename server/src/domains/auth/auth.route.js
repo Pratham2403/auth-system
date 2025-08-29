@@ -8,6 +8,7 @@ import {
   validateCredentials,
   getCurrentUser,
   linkedinCallback,
+  updatePassword
 } from "./auth.controller.js";
 import { authenticate } from "../../../../../shared/middlewares/auth.middleware.js";
 import { upload } from "../../../../../shared/middlewares/multer.middleware.js";
@@ -21,6 +22,7 @@ router.get("/logout", authenticate, logout);
 router.post("/register", register);
 router.post("/set-password", setPassword);
 router.get("/me", authenticate, getCurrentUser);
+router.patch("/update-password", authenticate, updatePassword);
 
 // LinkedIn OAuth routes
 router.get("/linkedin", (req, res, next) => {

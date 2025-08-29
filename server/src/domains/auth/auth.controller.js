@@ -128,8 +128,7 @@ export const register = async (userData) => {
       studentDetails,
       alumniDetails,
     } = userData;
-    
-    
+
     if (!name || !username || !userType || !email) {
       return {
         success: false,
@@ -151,7 +150,10 @@ export const register = async (userData) => {
 
     if (
       userType === UserType.STUDENT &&
-      (!studentDetails || !studentDetails.gradYear || !studentDetails.degree || !studentDetails.admissionNumber)
+      (!studentDetails ||
+        !studentDetails.gradYear ||
+        !studentDetails.degree ||
+        !studentDetails.admissionNumber)
     ) {
       return {
         success: false,
@@ -171,8 +173,13 @@ export const register = async (userData) => {
     }
 
     // Verify user details against existing information
-    const user = await verifyUserDetails(userType, email, name, studentDetails?.admissionNumber || alumniDetails?.gradYear);
-    
+    const user = await verifyUserDetails(
+      userType,
+      email,
+      name,
+      studentDetails?.admissionNumber || alumniDetails?.gradYear
+    );
+
     // Update user with email and type-specific details
     user.email = email;
     user.username = username;
@@ -205,7 +212,7 @@ export const register = async (userData) => {
     // Send activation email with token
     await sendActivationEmail(user, email);
 
-    return { 
+    return {
       success: true,
       message:
         "User registered successfully. Please check your email to set your password.",
@@ -222,7 +229,6 @@ export const register = async (userData) => {
 export const setPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
-    
 
     if (!token || !newPassword) {
       return res.status(400).json({
@@ -445,4 +451,57 @@ export const linkedinCallback = (req, res, next) => {
       }
     }
   )(req, res, next);
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { newPassword, oldPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both old and new passwords",
+      });
+    }
+
+    const user = await User.findById(req.user.id).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // If user has no local password (e.g., SSO-only), block update
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password update not available for this account",
+      });
+    }
+
+    const isMatch = await user.matchPassword(oldPassword);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Old password is incorrect",
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error updating password",
+    });
+  }
 };

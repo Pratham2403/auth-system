@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { UserType, DegreeType } from "../../../../shared/types/user.type.js";
 
 const UserSchema = new mongoose.Schema({
@@ -162,9 +163,25 @@ UserSchema.methods.getSignedJwtToken = function () {
   );
 };
 
-// Match user entered password to hashed password in database
+// Match user-entered password to hashed password in database (defensive)
 UserSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  // If either value is missing or not a string, don't attempt bcrypt.compare
+  if (typeof enteredPassword !== "string" || !enteredPassword) {
+    return false;
+  }
+
+  const hashed = this.password;
+  if (typeof hashed !== "string" || !hashed) {
+    // Happens when password isn't selected (select: false) or account has no local password
+    return false;
+  }
+
+  try {
+    return await bcrypt.compare(enteredPassword, hashed);
+  } catch (e) {
+    // In unlikely event bcrypt throws, treat as non-match
+    return false;
+  }
 };
 
 // Generate activation token
