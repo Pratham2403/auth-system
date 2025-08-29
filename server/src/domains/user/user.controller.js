@@ -386,3 +386,31 @@ export const getAllUsers = async (req, res) => {
 };
 
 // export const deleteUser = async (req, res) => {};
+export const updateProfileImage = async (userId, profilePicture) => {
+  try {
+    // userId is required and corresponds to the _id field in the User document
+    if (!userId) {
+      throw new Error("userId is required");
+    }
+
+    // profilePicture is required
+    if (!profilePicture) {
+      throw new Error("profilePicture is required");
+    }
+
+    // Use findOneAndUpdate with a _id query to avoid relying on a non-existent userId field in the schema
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: userId },
+      { profilePicture },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      throw new Error("User not found");
+    }
+
+  } catch (error) {
+    console.error("Error updating profile image:", error);
+    throw error;
+  }
+};

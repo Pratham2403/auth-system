@@ -2,7 +2,7 @@ import RabbitMQClient from "../../../../../shared/rabbitmq/rabbit.setup.js";
 import config from "../../../../../shared/rabbitmq/user.configuration.js";
 import User from "../../models/User.js";
 import { UserType } from "../../../../../shared/types/user.type.js";
-import { createUser } from "../../domains/user/user.controller.js";
+import { createUser, updateProfileImage } from "../../domains/user/user.controller.js";
 import { register } from "../../domains/auth/auth.controller.js";
 import { deleteFromCloudinary } from "../../config/coludinaryConnection.js";
 import { log } from "console";
@@ -38,6 +38,8 @@ class UserRegistrationConsumer {
           return this.processResetUser(content);
         } else if (routingKey === config.USER_ROUTING_KEYS.USER_CREATED) {
           return this.processCreateUser(content);
+        } else if (routingKey === config.USER_ROUTING_KEYS.USER_PROFILE_IMAGE_UPDATED) {
+          return this.processUpdateProfileImage(content);
         } else {
           console.warn(`Unhandled routing key: ${routingKey}`);
           return {
@@ -298,6 +300,24 @@ class UserRegistrationConsumer {
       };
     } catch (error) {
       console.error("Error processing user creation:", error);
+      throw error;
+    }
+  }
+
+
+  async processUpdateProfileImage(message) {
+    try {
+      const { userId, profilePicture } = message;
+      
+
+      await updateProfileImage(userId, profilePicture);
+
+      return {
+        success: true,
+        message: `Profile image updated successfully for user ${userId}`,
+      };
+    } catch (error) {
+      console.error("Error processing update profile image:", error);
       throw error;
     }
   }
