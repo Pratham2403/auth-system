@@ -281,7 +281,6 @@ class UserRegistrationConsumer {
       // Check if the requesting user has admin privileges
 
       const user = await register(userData);
-      console.log(user);
       
 
       if (!user.success) {
