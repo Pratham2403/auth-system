@@ -191,8 +191,8 @@ export const register = async (userData) => {
     // Add user type specific details
     if (userType === UserType.PROFESSOR && professorDetails) {
       user.professorDetails = {
-        position: professorDetails.position,
-        googleScholarLink: professorDetails.googleScholarLink || "",
+        specialInterestGroups: professorDetails.specialInterestGroups || [],
+        position: professorDetails.position || "",
       };
     } else if (userType === UserType.STUDENT && studentDetails) {
       user.studentDetails = {

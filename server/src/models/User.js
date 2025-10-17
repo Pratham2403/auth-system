@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { UserType, DegreeType } from "../../../../shared/types/user.type.js";
+import {
+  UserType,
+  DegreeType,
+  SIGType,
+} from "../../../../shared/types/user.type.js";
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -39,7 +43,11 @@ const UserSchema = new mongoose.Schema({
   },
   // Fields specific to user types
   professorDetails: {
-    googleScholarLink: String,
+    specialInterestGroups: {
+      type: [String],
+      enum: Object.values(SIGType),
+      default: [],
+    },
     position: String,
   },
   studentDetails: {

@@ -312,6 +312,7 @@ export const getAllUsers = async (req, res) => {
       "studentDetails.admissionNumber",
       "alumniDetails.gradYear",
       "professorDetails.position",
+      "professorDetails.specialInterestGroups",
     ];
     const projectionList =
       Array.isArray(fields) && fields.length > 0 ? fields : defaultProjection;
@@ -361,7 +362,10 @@ export const getAllUsers = async (req, res) => {
         ? { gradYear: u.alumniDetails.gradYear }
         : undefined,
       professorDetails: u.professorDetails
-        ? { position: u.professorDetails.position }
+        ? {
+            position: u.professorDetails.position,
+            specialInterestGroups: u.professorDetails.specialInterestGroups,
+          }
         : undefined,
     }));
 
@@ -408,7 +412,6 @@ export const updateProfileImage = async (userId, profilePicture) => {
     if (!updatedUser) {
       throw new Error("User not found");
     }
-
   } catch (error) {
     console.error("Error updating profile image:", error);
     throw error;
