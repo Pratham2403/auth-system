@@ -291,6 +291,13 @@ export const login = (req, res, next) => {
         });
       }
 
+      // Update last login time
+      User.findByIdAndUpdate(
+        user._id,
+        { lastLogin: Date.now() },
+        { new: false }
+      ).catch((err) => console.log("Error updating last login time:", err));
+
       // Send token response
       sendTokenResponse(user, 200, res, storageType);
     })(req, res, next);
@@ -310,12 +317,12 @@ export const logout = (req, res) => {
       });
     }
 
-    // Update last login time
-    User.findByIdAndUpdate(
-      req.user.id,
-      { lastLogin: Date.now() },
-      { new: false }
-    ).catch((err) => console.log("Error updating last login time:", err));
+    // // Update last login time
+    // User.findByIdAndUpdate(
+    //   req.user.id,
+    //   { lastLogin: Date.now() },
+    //   { new: false }
+    // ).catch((err) => console.log("Error updating last login time:", err));
 
     return res.status(200).json({
       success: true,

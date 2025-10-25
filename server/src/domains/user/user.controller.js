@@ -318,7 +318,10 @@ export const getAllUsers = async (req, res) => {
       Array.isArray(fields) && fields.length > 0 ? fields : defaultProjection;
     const projection = projectionList.join(" ");
 
-    const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+    const sort =
+      sortBy === "lastLogin"
+        ? { lastLogin: sortOrder === "asc" ? 1 : -1 }
+        : { lastLogin: -1, [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
     // Query with lean() for performance
     const [items, total, counts] = await Promise.all([
