@@ -420,3 +420,128 @@ export const updateProfileImage = async (userId, profilePicture) => {
     throw error;
   }
 };
+
+/**
+ * Get professors by Special Interest Group
+ */
+export const getProfessorsBySIG = async (req, res) => {
+  try {
+    const { sigId } = req.params;
+    
+    if (!sigId) {
+      return res.status(400).json({
+        success: false,
+        error: "SIG ID is required",
+      });
+    }
+
+    const professors = await User.find({
+      userType: UserType.PROFESSOR,
+      "professorDetails.specialInterestGroups": sigId,
+    })
+      .select(
+        "name email profilePicture professorDetails.position professorDetails.specialInterestGroups professorDetails.bio professorDetails.interests"
+      )
+      .lean();
+
+    const formattedProfessors = professors.map((prof) => ({
+      id: prof._id.toString(),
+      name: prof.name,
+      email: prof.email,
+      profilePicture: prof.profilePicture,
+      position: prof.professorDetails?.position || "",
+      specialInterestGroups: prof.professorDetails?.specialInterestGroups || [],
+      bio: prof.professorDetails?.bio || "",
+      interests: prof.professorDetails?.interests || [],
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: formattedProfessors.length,
+      professors: formattedProfessors,
+    });
+  } catch (error) {
+    console.error("Error fetching professors by SIG:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Error fetching professors",
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Update professor bio and interests (Admin only)
+ */
+export const updateProfessorDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { bio, interests } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: "User ID is required",
+      });
+    }
+
+    // Find the professor
+    const professor = await User.findOne({
+      _id: userId,
+      userType: UserType.PROFESSOR,
+    });
+
+    if (!professor) {
+      return res.status(404).json({
+        success: false,
+        error: "Professor not found",
+      });
+    }
+
+    // Update only bio and interests fields
+    const updateFields = {};
+    if (bio !== undefined) {
+      updateFields["professorDetails.bio"] = bio;
+    }
+    if (interests !== undefined) {
+      if (!Array.isArray(interests)) {
+        return res.status(400).json({
+          success: false,
+          error: "Interests must be an array",
+        });
+      }
+      updateFields["professorDetails.interests"] = interests;
+    }
+
+    const updatedProfessor = await User.findByIdAndUpdate(
+      userId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    ).select(
+      "name email profilePicture professorDetails.position professorDetails.specialInterestGroups professorDetails.bio professorDetails.interests"
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Professor details updated successfully",
+      professor: {
+        id: updatedProfessor._id.toString(),
+        name: updatedProfessor.name,
+        email: updatedProfessor.email,
+        profilePicture: updatedProfessor.profilePicture,
+        position: updatedProfessor.professorDetails?.position || "",
+        specialInterestGroups:
+          updatedProfessor.professorDetails?.specialInterestGroups || [],
+        bio: updatedProfessor.professorDetails?.bio || "",
+        interests: updatedProfessor.professorDetails?.interests || [],
+      },
+    });
+  } catch (error) {
+    console.error("Error updating professor details:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Error updating professor details",
+      message: error.message,
+    });
+  }
+};

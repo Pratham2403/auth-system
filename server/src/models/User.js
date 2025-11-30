@@ -49,6 +49,14 @@ const UserSchema = new mongoose.Schema({
       default: [],
     },
     position: String,
+    bio: {
+      type: String,
+      default: "",
+    },
+    interests: {
+      type: [String],
+      default: [],
+    },
   },
   studentDetails: {
     gradYear: Number,

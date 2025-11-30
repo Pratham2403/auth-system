@@ -1,6 +1,12 @@
 import express from "express";
 import { UserType } from "../../../../../shared/types/user.type.js";
-import { getUserById, resetUser, getAllUsers } from "./user.controller.js";
+import {
+  getUserById,
+  resetUser,
+  getAllUsers,
+  getProfessorsBySIG,
+  updateProfessorDetails,
+} from "./user.controller.js";
 import {
   authenticate,
   requireRole,
@@ -18,5 +24,14 @@ router.post(
 );
 
 router.put("/reset/:id", authenticate, requireRole(UserType.ADMIN), resetUser);
+
+// SIG-related professor endpoints
+router.get("/professors/sig/:sigId", getProfessorsBySIG);
+router.put(
+  "/professor/:userId",
+  authenticate,
+  requireRole(UserType.ADMIN),
+  updateProfessorDetails
+);
 
 export default router;
