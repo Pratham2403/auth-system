@@ -545,3 +545,82 @@ export const updateProfessorDetails = async (req, res) => {
     });
   }
 };
+
+/**
+ * Refresh all the UserType.STUDENT users to UserType.ALUMNI if their gradYear is less than or equal to the current year.
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @returns {Promise<void>}
+ */
+export const refreshAllStudents = async (req, res) => {
+  const session = await User.startSession();
+
+  try {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const mayCutoff = new Date(currentYear, 6, 31, 23, 59, 59, 999);
+
+    // Only convert current-year students after the July 31 cutoff; otherwise, only older years.
+    const effectiveMaxGradYear =
+      now > mayCutoff ? currentYear : currentYear - 1;
+
+    if (effectiveMaxGradYear < 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No eligible students to refresh",
+        count: 0,
+      });
+    }
+
+    let updatedCount = 0;
+
+    await session.withTransaction(async () => {
+      const filter = {
+        userType: UserType.STUDENT,
+        "studentDetails.gradYear": { $lte: effectiveMaxGradYear },
+      };
+
+      // Update in-place using an aggregation pipeline to carry over gradYear and preserve other alumni details.
+      const updateResult = await User.updateMany(
+        filter,
+        [
+          {
+            $set: {
+              userType: UserType.ALUMNI,
+              alumniDetails: {
+                $mergeObjects: [
+                  { $ifNull: ["$alumniDetails", {}] },
+                  { gradYear: "$studentDetails.gradYear" },
+                ],
+              },
+              updatedAt: now,
+            },
+          },
+          { $unset: "studentDetails" },
+        ],
+        { session }
+      );
+
+      updatedCount = updateResult.modifiedCount || 0;
+    });
+
+    return res.status(200).json({
+      success: true,
+      message:
+        updatedCount > 0
+          ? "Students refreshed to Alumni successfully"
+          : "No students were eligible for refresh",
+      count: updatedCount,
+    });
+  } catch (error) {
+    console.error("Error refreshing students:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Error refreshing students",
+      message: error.message,
+    });
+  } finally {
+    await session.endSession();
+  }
+};

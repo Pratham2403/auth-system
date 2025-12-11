@@ -4,6 +4,7 @@ import {
   getUserById,
   resetUser,
   getAllUsers,
+  refreshAllStudents,
   getProfessorsBySIG,
   updateProfessorDetails,
 } from "./user.controller.js";
@@ -22,6 +23,8 @@ router.post(
   // requireRole(UserType.ADMIN),
   getUserById
 );
+
+router.post("/refresh", authenticate, requireRole(UserType.ADMIN), refreshAllStudents);
 
 router.put("/reset/:id", authenticate, requireRole(UserType.ADMIN), resetUser);
 
