@@ -6,15 +6,15 @@ import { UserType, DegreeType } from "../../../../shared/types/user.type.js";
 
 export interface IBaseUser {
   name: string;
-  username?: string;
-  email?: string;
+  username: string;
+  email: string;
   password?: string;
   active: boolean;
   userType: UserType;
-  provider: string;
+  provider?: string;
   providerId?: string;
   lastLogin?: Date;
-  profilePicture: {
+  profilePicture?: {
     url: string;
     publicId: string;
   };
@@ -22,8 +22,13 @@ export interface IBaseUser {
   activationExpires?: Date;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+
+  matchPassword(enteredPassword: string): Promise<boolean>;
+  getSignedJwtToken(): string;
+  generateActivationToken(): string;
+  generateResetPasswordToken(): string;
 }
 
 export interface IStudentUser extends IBaseUser {
@@ -51,10 +56,15 @@ export interface IAlumniUser extends IBaseUser {
   };
 }
 
+export interface IAdminUser extends IBaseUser {
+  userType: UserType.ADMIN;
+}
+
 export type UserDocument =
   | IStudentUser
   | IProfessorUser
-  | IAlumniUser;
+  | IAlumniUser
+  | IAdminUser;
 
 
 const UserSchema = new mongoose.Schema(

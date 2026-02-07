@@ -29,7 +29,8 @@
       "@schemes/*": ["./src/schemes/*"],
       "@utils/*": ["./src/utils/*"],
       "@services/*": ["./src/services/*"],
-      "@root/*": ["./src/*"]
+      "@validators/*": ["./src/validators/*"],
+      "@root/*": ["./src/*"],
     }
   },
   "include": ["src/**/*"],
