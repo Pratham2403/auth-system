@@ -14,6 +14,7 @@ yarn-error.log
 !.env.example
 
 # Build output
+server-ts/build
 /dist
 /build
 /out
@@ -92,3 +93,5 @@ Thumbs.db
 
 # Docker
 .dockerignore
+
+server-ts/build
