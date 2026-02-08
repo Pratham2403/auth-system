@@ -14,7 +14,7 @@ yarn-error.log
 !.env.example
 
 # Build output
-server-ts/build
+server-ts/build/
 /dist
 /build
 /out
